@@ -1,0 +1,11 @@
+include dash_download/dash_download.min.js
+include dash_download/dash_download.min.js.map
+include dash_download/async-*.js
+include dash_download/async-*.js.map
+include dash_download/*-shared.js
+include dash_download/*-shared.js.map
+include dash_download/metadata.json
+include dash_download/package-info.json
+include README.md
+include LICENSE
+include package.json
