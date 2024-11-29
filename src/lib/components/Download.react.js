@@ -2,8 +2,6 @@ import PropTypes from 'prop-types';
 import {Component} from 'react';
 import {toByteArray} from 'base64-js';
 import {showSaveFilePicker} from 'native-file-system-adapter';
-// import {streamSaver} from 'streamsaver'
-// import {WritableStream} from "web-streams-polyfill";
 
 
 const getValue = (src, fallback, key) =>
@@ -13,14 +11,9 @@ export default class Download extends Component {
     render() {
         return null;
     }
-    componentDidMount() {
-        const len = this.props.end - 1
-        this.chunks = new Array(len);
-        this.acc = 0;
-    }
 
     async componentDidUpdate(prevProps) {
-        const {data} = this.props;
+        const {id, data} = this.props;
         // If the data hasn't changed, do nothing.
         if (!data || data === prevProps.data) {
             return;
@@ -28,50 +21,41 @@ export default class Download extends Component {
         // Extract options from data if provided, fallback to props.
         // const type = getValue(data, this.props, 'type');
         const base64 = getValue(data, this.props, 'base64');
-        const idx = data.idx;
+        const first = data.first;
+        const last = data.last;
 
-        console.log("Received number ", this.acc, "Actual index ", idx);
-        if (idx === 0 && this.acc === 0) {
-            this.fileHandle = await showSaveFilePicker({
-                _preferPolyfill: false,
-                suggestedName: data.filename,
-            });
+        if(first){
+            this.fileHandle = await showSaveFilePicker(
+                {
+                    suggestedName: data.filename,
+                    _preferPolyfill: true
+                },
+            );
+            this.writable = await this.fileHandle.createWritable();
+            this.writer = this.writable.getWriter()
         }
 
         // Invoke the download using a Blob.
         const content = base64 ? toByteArray(data.content) : data.content;
         const blob = new Blob([content]);
 
-        this.chunks.splice(idx, 0, blob);
-        this.acc++;
-
-        if(this.acc === this.props.end){
-            if(!this.fileHandle){
-                await new Promise(r => setTimeout(r, 10000))
-                if(!this.fileHandle){ return; }
-            }
-            console.log(this.fileHandle)
-            const writer = await this.fileHandle.createWritable();
-            for (const bl of this.chunks){
-                console.log("writing")
-                await writer.write({
-                    type: 'write',
-                    data: bl,
-                });
-                console.log("wrote")
-            }
-            await writer.close();
+        if(this.fileHandle && this.writer){
+            // this.writer.write({
+            //     type: 'write',
+            //     data: blob,
+            // });
+            this.writer.write(blob)
         }
-                // (
-                // (length) ?
-                // this.streamSaver.createWriteStream(data.filename) :
-                // this.streamSaver.createWriteStream(
-                //     data.filename,
-                //     {
-                //         size: length,
-                //     }
-                // )).getWriter()
-        // }
+
+        if(last){
+            this.writer.close();
+            this.fileHandle = null;
+            this.writable = null;
+            this.writer = null;
+        }
+        else {
+            window.dash_clientside.set_props(id, {next_chunk: !this.props.next_chunk});
+        }
     }
 }
 
@@ -82,9 +66,9 @@ Download.propTypes = {
     id: PropTypes.string,
 
     /**
-     * Final chunk index.
+     * A bool toggled to trigger a Dash callback for the next download chunk.
      */
-    end: PropTypes.number.isRequired,
+    next_chunk: PropTypes.bool,
 
     /**
      * On change, a download is invoked.
@@ -99,9 +83,13 @@ Download.propTypes = {
          */
         content: PropTypes.string.isRequired,
         /**
-         * Current chunk index.
+         * Is it the first chunk.
          */
-        idx: PropTypes.number.isRequired,
+        first: PropTypes.bool.isRequired,
+        /**
+         * Is it the last chunk.
+         */
+        last: PropTypes.bool.isRequired,
         /**
          * Set to true, when data is base64 encoded.
          */

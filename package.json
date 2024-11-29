@@ -18,7 +18,8 @@
   "dependencies": {
     "base64-js": "^1.5.1",
     "native-file-system-adapter": "^3.0.1",
-    "ramda": "^0.26.1"
+    "ramda": "^0.26.1",
+    "web-streams-polyfill": "^4.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.22.1",
