@@ -1,17 +1,51 @@
-# dash download
+# Long Download
 
-dash download is a Dash component library.
+This component allows downloading large files by chunking them between several callbacks, using [native-file-system-adapter](https://github.com/jimmywarting/native-file-system-adapter) under the hood.
 
-Project Description
+This project currently does not account for errors nor edge cases and lacks testing.
 
-Get started with:
-1. Install Dash and its dependencies: https://dash.plotly.com/installation
-2. Run `python usage.py`
+## Todo
+- [x] Basic functionality
+- [ ] Handle edge cases (e.g. user closes dialog box)
+- [ ] Support for specifying MIME type
+- [ ] Tests
+
+## Usage
+See [usage.py](./usage.py).
+
+```
+import dash_download
+...
+dash_download.Download(
+    id="<id>",
+    ...
+)
+```
+
+The main download logic should go in a circular callback with
+```
+Output("dl", "data"),
+Input("dl", "next_chunk"),
+```
+where `data` is much like the regular `dcc.Download` component, but where the `data` prop
+should be given `first` and `last` equal to `True` if it is the first or last chunk.
+
+The callback for `next_chunk` will happen automatically when the previous chunk has downloaded.
+
+When handling the callback after sending the last chunk, return `no_update`.
+
+## Demo
+1. Build
+    ```
+    $ npm run build
+    ```
+2. Run and modify the `usage.py` sample dash app:
+    ```
+    $ python usage.py
+    ```
 3. Visit http://localhost:8050 in your web browser
 
-## Contributing
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md)
+## Development
 
 ### Install dependencies
 
@@ -37,28 +71,7 @@ If you have selected install_dependencies during the prompt, you can skip this p
     $ pip install -r tests/requirements.txt
     ```
 
-### Write your component code in `src/lib/components/Download.react.js`.
-
-- The demo app is in `src/demo` and you will import your example component code into your demo app.
-- Test your code in a Python environment:
-    1. Build your code
-        ```
-        $ npm run build
-        ```
-    2. Run and modify the `usage.py` sample dash app:
-        ```
-        $ python usage.py
-        ```
-- Write tests for your component.
-    - A sample test is available in `tests/test_usage.py`, it will load `usage.py` and you can then automate interactions with selenium.
-    - Run the tests with `$ pytest tests`.
-    - The Dash team uses these types of integration tests extensively. Browse the Dash component code on GitHub for more examples of testing (e.g. https://github.com/plotly/dash-core-components)
-- Add custom styles to your component by putting your custom CSS files into your distribution folder (`dash_download`).
-    - Make sure that they are referenced in `MANIFEST.in` so that they get properly included when you're ready to publish your component.
-    - Make sure the stylesheets are added to the `_css_dist` dict in `dash_download/__init__.py` so dash will serve them automatically when the component suite is requested.
-- [Review your code](./review_checklist.md)
-
-### Create a production build and publish:
+## Build
 
 1. Build your code:
     ```
@@ -77,22 +90,4 @@ If you have selected install_dependencies during the prompt, you can skip this p
     $ pip install dash_download-0.0.1.tar.gz
     ```
 
-4. If it works, then you can publish the component to NPM and PyPI:
-    1. Publish on PyPI
-        ```
-        $ twine upload dist/*
-        ```
-    2. Cleanup the dist folder (optional)
-        ```
-        $ rm -rf dist
-        ```
-    3. Publish on NPM (Optional if chosen False in `publish_on_npm`)
-        ```
-        $ npm publish
-        ```
-        _Publishing your component to NPM will make the JavaScript bundles available on the unpkg CDN. By default, Dash serves the component library's CSS and JS locally, but if you choose to publish the package to NPM you can set `serve_locally` to `False` and you may see faster load times._
-
-5. Share your component with the community! https://community.plotly.com/c/dash
-    1. Publish this repository to GitHub
-    2. Tag your GitHub repository with the plotly-dash tag so that it appears here: https://github.com/topics/plotly-dash
-    3. Create a post in the Dash community forum: https://community.plotly.com/c/dash
+This component is based on the [dash-component-boilerplate](https://github.com/plotly/dash-component-boilerplate/tree/master) cookiecutter.
